@@ -4,6 +4,7 @@ import { hash, compare } from 'bcrypt'
 import { MyContext } from './MyContext'
 import { createRefreshToken, createAccessToken } from './auth'
 import { isAuth } from './isAuth'
+import { sendRefreshToken } from './sendRefreshToken'
 
 @ObjectType()
 class LoginResponse {
@@ -13,11 +14,13 @@ class LoginResponse {
 
 @Resolver()
 export class UserResolver {
+  // get all users
   @Query(() => [User])
   users() {
     return User.find()
   }
 
+  // get authorized data
   @Query(() => String)
   @UseMiddleware(isAuth)
   authorized(@Ctx() { payload }: MyContext) {
@@ -25,6 +28,7 @@ export class UserResolver {
     return `your user id is ${payload!.userId}`
   }
 
+  // register new user
   @Mutation(() => Boolean)
     async register(
       @Arg('email') email: string,
@@ -45,6 +49,7 @@ export class UserResolver {
       return true
     }
 
+  // login user
   @Mutation(() => LoginResponse)
   async login(
     @Arg('email') email: string,
@@ -64,11 +69,7 @@ export class UserResolver {
     }
 
     // login successful
-    res.cookie(
-      'jid',
-      createRefreshToken(user),
-      { httpOnly: true }
-    )
+    sendRefreshToken(res, createRefreshToken(user))
 
     return {
       accessToken: createAccessToken(user)
