@@ -37,14 +37,20 @@ import { sendRefreshToken } from './sendRefreshToken'
             return res.send({ ok: false, accessToken: '' })
         }
 
-        // refresh token is valid
-        // send back new access token and new refresh token
+        // it is a valid refresh token
         const user = await User.findOne({ id: payload.userId })
 
         if (!user) {
             return res.send({ ok: false, accessToken: '' })
         }
 
+        // check if it is the current version
+        if (user.tokenVersion !== payload.tokenVersion) {
+            return res.send({ ok: false, accessToken: '' })
+        }
+
+        // refresh token is both vaid and current
+        // send back new refresh token and new access token
         sendRefreshToken(res, createRefreshToken(user))
 
         return res.send({ ok: true, accessToken: createAccessToken(user) })
